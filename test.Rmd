@@ -23,7 +23,7 @@ summary(cars)
 
 You can also embed plots, for example:
 
-Ceci est une ligne ajoutée par mael
+Ceci est une ligne ajoutée par mael et loic
 
 ```{r pressure, echo=FALSE}
 plot(pressure)
