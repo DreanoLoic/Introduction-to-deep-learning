@@ -23,7 +23,11 @@ summary(cars)
 
 You can also embed plots, for example:
 
+<<<<<<< HEAD
 Ceci est une ligne ajoutée par mael, deuxième
+=======
+Ceci est une ligne ajoutée par mael et loic
+>>>>>>> 8668d679243d5e6f425796417bb1db36c0ab54c6
 
 ```{r pressure, echo=FALSE}
 plot(pressure)
