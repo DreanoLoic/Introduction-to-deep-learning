@@ -1,0 +1,920 @@
+---
+title: "Exercise Set 1"
+author: "Loïc Dreano"
+date: "16 November 2022"
+output:
+  pdf_document:
+    latex_engine: xelatex
+urlcolor: blue
+---
+
+
+* Submit the answer via Moodle at the latest on Wednesday, 16 November 2022, at 23:59. 
+* You can answer anonymously or write your name on the answer sheet; your choice.
+* One person should complete the assignment, but discussions and joint-solving sessions with others are encouraged. Your final solution must, however, be your own. You are not allowed to copy ready-made solutions or solutions made by other students. You are permitted to use external sources, web searches included.
+* You can discuss the problems in the exercise workshop.
+* Your answer will be peer-reviewed by you and randomly selected other students.
+* The language of the assignments is English.
+* The submitted report should be in a single Portable Document Format (pdf) file.
+* Answer the problems in the correct order.
+* Read Moodle's general instructions and grading criteria before starting with the problems.
+* Main source material: James et al., Chapters 1-3 and 5. Please feel to use other resources as well. "James et al." refers to James, Witten, Hastie, and Tibshirani, 2021. An Introduction to Statistical Learning with applications in R, 2nd edition. Springer.
+* Notice that you can submit your answer to Moodle well before the deadline and revise it until the deadline. Therefore: please submit your solution in advance after you have solved some problems! Due to the peer review process, we cannot grant extensions to the deadline. Even though the Moodle submission may occasionally remain open after 23:59, the submission system will eventually close. If you try to submit your answers late, you will **not** get any points (including peer-review points) from this Exercise Set. You have been warned.
+* Please double-check that the submitted pdf is appropriately formatted and, e.g., contains all figures. It is challenging to produce correctly formatted pdf files with Jupyter Notebooks: remember to check the created pdf. I recommend using R Markdown instead of Jupyter notebooks.
+* You can solve the problems at your own pace. However, we have given a suggested schedule below ("Do this after lecture X."). If you follow the plan, you can do the problems after we have covered the topics in class.
+
+
+\newpage
+## Problem 1
+
+*[6 points]*
+
+*Objective: familiarity with tools, basic description of the data set*
+
+*Do this after lecture L2*
+
+This exercise relates to a data set about new particle formation (NPF), of which you will do your term project. Read the data description and download the dataset file `npf_train.csv` from the Moodle term project final report page. 
+
+The instructions below are in R and Python.
+Before reading the data into R or Python, you can view it in Excel or a text editor.
+For a good book about the topic, we recommend [R for Data Science](https://r4ds.had.co.nz).
+
+This file is produced using *R Markdown* (but you may use whatever you want, e.g. Jupyter notebooks, just remember that the submission needs to be in the form of a pdf).
+
+If you want to use Python in R Markdown, you *might* need to specify the Python executable (replace the path with your own), unless your default Python environment has everything installed.
+
+```{r eval=FALSE}
+reticulate::use_python("/opt/homebrew/Caskroom/miniforge/base/envs/atm-env-1/bin/python")
+```
+
+```{r, include=FALSE, echo=FALSE, eval=TRUE}
+kais_special_python_path <- "/opt/homebrew/Caskroom/miniforge/base/envs/atm-env-1/bin/python"
+if (file.exists(kais_special_python_path)) {
+    reticulate::use_python(kais_special_python_path)
+}
+```
+
+### Task a
+
+Read the CSV into a data frame called `npf`.  
+
+
+```{r}
+# R
+npf <- read.csv("npf_train.csv")
+```
+
+### Task b
+
+Look at the data. 
+
+```{r,eval=FALSE}
+# R
+npf # Basic printing.
+fix(npf) # Nicer formatting.
+View(npf) # Even nicer formatting in RStudio data viewer (requires RStudio).
+```
+The dataframe contain 464 observations of 104 variables.
+
+
+Notice that the second column is the date and the first column is the id. We don't want to treat the id as data. However, it may be handy to have the dates so we save them as row names in R or an index in Python. Try the following commands:
+  
+```{r}
+# R
+rownames(npf) <- npf[, "date"]
+npf <- npf[, -(1:2)]
+```
+The dataframe now contain 464 observations of 102 variables.
+
+
+### Task c
+
+i. Produce a numerical summary of the variables in the data set. We notice that the variable "partlybad" is always false and, therefore, useless. We opt to remove it as well.
+
+```{r,echo=FALSE}
+# R
+summary(npf[,1:5])
+npf <- npf[, -2]
+```
+From this summary we can see that the variables class4 is categorical, partlybad is logical variable with only False value, and the rest seems to be continous variables. 
+
+Finally the dataframe contain 464 observations of 101 variables.
+
+
+ii. Produce a scatterplot matrix of the first five variables of the data (you can use the target variable `class4` as the colour). 
+
+```{r,echo=FALSE}
+# R with ggplot2 (prettier plots)
+library(ggplot2)
+library(GGally)
+ggpairs(npf[, 2:6], aes(colour = npf$class4, alpha = 0.4))+
+  theme_bw()
+```
+Here we can see that respectively the pairs of variable variables CO2168.std and CO2336.std; CO2168.std and CO242.std; CO2242.std and CO2336.std;  CO2242.mean and CO2336.mean; are correlated We can see that the std variables are correlated together as the mean variables. But there is no correlation between std values and mean values.
+
+iii. Produce side-by-side boxplots of event vs nonevent days.
+
+```{r,echo=FALSE,out.width="70%"}
+# R with ggplot2 (prettier plots)
+ggplot(npf, aes(x = class4, y = RHIRGA84.mean)) +
+  geom_boxplot()+
+  theme_bw() 
+```
+\
+Its seem that the RHIRGA84.mean values seems to have higher values on the Nonevent category than 
+the others one. The mean values for the groups la, lb, ll are close to each other 
+
+iv. Create a new qualitative variable, called `class2`, which is "event" if there was an NPF event and "nonevent" otherwise.
+
+```{r}
+# R
+npf$class2 <- factor("event", levels = c("nonevent", "event"))
+npf$class2[npf$class4 == "nonevent"] <- "nonevent"
+```
+
+Produce side-by-side boxplots of `CS.mean` versus `class2`.
+
+```{r,echo=FALSE,out.width="70%"}
+
+# R with ggplot
+ggplot(npf, aes(x = class2, y = CS.mean)) +
+  theme_bw() +
+  geom_boxplot()
+```
+\
+The value of CS.mean seems to have higher values in nonevent category than in event gategory.
+
+v. Produce some histograms with differing numbers of bins for a few of the quantitative variables. 
+
+
+```{r,figures-side, fig.show="hold", out.width="50%",echo=FALSE}
+par(mar = c(4, 4, .1, .1))
+ggplot(npf, aes(x = H2O336.mean)) +
+  theme_bw() +
+  theme(panel.grid.minor = element_blank(),plot.title = element_text(hjust = 0.5),
+        legend.text=element_text(size=11),legend.text.align = 0)+
+  geom_histogram(bins=12,color="black", fill="lightblue")+
+  ggtitle('Histogram of the variable H2O336.mean with 12 bins')
+
+ggplot(npf, aes(x = H2O336.mean)) +
+  theme_bw() +
+  theme(panel.grid.minor = element_blank(),plot.title = element_text(hjust = 0.5),
+        legend.text=element_text(size=11),legend.text.align = 0)+
+  geom_histogram(bins=50,color="black", fill="lightblue")+
+  ggtitle('Histogram of the variable H2O336.mean with 50 bins')
+
+ggplot(npf, aes(x = CO2336.mean)) +
+  theme_bw() +
+  theme(panel.grid.minor = element_blank(),plot.title = element_text(hjust = 0.5),
+        legend.text=element_text(size=11),legend.text.align = 0)+
+  geom_histogram(bins=10,color="black", fill="darkgoldenrod2")+
+  ggtitle('Histogram of the variable CO2336.mean with 10 bins')
+
+ggplot(npf, aes(x = CO2336.mean)) +
+  theme_bw() +
+  theme(panel.grid.minor = element_blank(),plot.title = element_text(hjust = 0.5),
+        legend.text=element_text(size=11),legend.text.align = 0)+
+  geom_histogram(bins=30,color="black", fill="darkgoldenrod2")+
+  ggtitle('Histogram of the variable CO2336.mean with 30 bins')
+
+
+```
+
+vi. Continue exploring the data, and provide a brief summary of what you discover. You should find at least one more or less interesting "thing" about the data you have not already covered.
+
+```{r,echo=FALSE}
+ggpairs(npf[, c(95:98,101)], aes(colour = npf$class4, alpha = 0.4))+
+  theme_bw()
+```
+
+IN the figure we notice that the variables UV_A and UV_B are correlated. but more interesting is that the distributions of the values are completely different from the nonevent category than from the event category. In fact the values seems to be lowers in the nonevent category for the UV_A and UV_B variables than in the envent category.
+
+
+\newpage
+## Problem 2
+
+*[4 points]*
+
+*Learning objective: using regression models from ML libraries, generalisation, and validation techniques.*
+
+*Do this after lecture L3.*
+
+Read Section 5.1 of James et al.
+
+In supervised learning, we try to find a function that produces a reasonable estimate of the dependent variable. In this problem, we will partially reproduce the results of Cho et al. (2020)\footnote{Cho, D., Yoo, C., Im, J., Cha, D., 2020. Comparative Assessment of Various Machine Learning‐Based Bias Correction Methods for Numerical Weather Prediction Model Forecasts of Extreme Air Temperatures in Urban Areas. Earth and Space Science 7. <https://doi.org/10.1029/2019EA000740>}. 
+Most of the code needed here is given below. One of the purposes of this problem - in addition to theory - is to make you more comfortable with various machine learning workflows.
+
+We provide most of the code (in R and Python) below; therefore, this problem should not require much coding. Please try to understand what the code does! You may find it helpful later.
+
+Download the `Bias correction of numerical prediction model temperature forecast` dataset, available via the UCI machine learning repository\footnote{<https://archive.ics.uci.edu/ml/datasets/Bias+correction+of+numerical+prediction+model+temperature+forecast>}.
+Consider the task of predicting the next day's maximum temperature (variable `Next_Tmax`) by using meteorological forecast and geographic data, as in Cho et al. (2020).
+
+Instructions for preprocessing the data:
+
+ * Remove the following variables: categorical variables `stations` and `Date` as well as the alternate target variable `Next_Tmin` from your final data file.
+ * Remove the rows with missing values to make things simpler.
+ * For speed, you can optionally down-sample the data, e.g., to $n=1000$ rows.
+
+Choose $n/2$ rows randomly, using which you train the regressor, called the *training set*. You can use the remaining data items as a *test set*.
+
+Please use the following algorithms, partially replicating Cho et al. (2020), e.g., from sklearn:
+
+* dummy model (see the discussion below)
+* OLS linear regression (simple baseline)
+* random forest (RF), implemented by Cho et al. (2020)
+* support vector regression (SVR), implemented by Cho et al. (2020)
+* one more regression model implemented in your machine learning library (e.g., sklearn) not mentioned above and add it to your list. 
+
+"Dummy model" is a supervised learning model that gives the same constant output regardless of the values of the covariates. The outcome might be such that it minimises the loss on the training data (e.g., if we have OLS regression, this would be the mean of the dependent variable).
+Including the dummy model in your list is often helpful because it costs you almost nothing and gives you a good baseline for the performance of your "real" supervised learning models. In addition to the dummy model, it is always helpful to include a simple baseline, such as OLS linear regression for regression problems (see above)  and logistic regression for classification problems. It happens surprisingly often that your complex machine-learning model does not substantially outperform the simple baseline model.
+
+### Task a
+
+```{r,echo=FALSE}
+## You should usually use a random seed to have repeatable results.
+## I always use 42, but you are free to choose a different seed.
+## You can try to vary your random seed to see if your conclusions
+## change (obviously, it might be because these are random algorithms).
+set.seed(42)
+
+library(MASS)
+library(randomForest) # random forest
+library(e1071) # SVM
+library(rpart) # rpart 
+
+url <- "https://archive.ics.uci.edu/ml/machine-learning-databases/00514/Bias_correction_ucl.csv"
+file <- "Bias_correction_ucl.csv"
+if (!file.exists(file)) {
+    download.file(url, file)
+}
+X <- read.csv(file)
+
+## Remove categorical columns named "station" and "Date" as well as
+## secondary target variable "Next_Tmin" (we'll use "Next_Tmax" here)
+X <- X[, !colnames(X) %in% c("stations", "Date", "Next_Tmin")]
+## Remove rows with NA values
+X <- na.omit(X)
+## take a subset of 1000 rows
+X <- X[sample.int(nrow(X), 1000), ]
+
+idx <- sample.int(nrow(X), nrow(X) / 2)
+data_train <- X[idx, ] # train using this data
+data_test <- X[-idx, ] # holdout data for final analysis
+
+#' root mean squared error measure
+rmse <- function(yhat, y) sqrt(mean((y - yhat)**2))
+
+#' split n items into k folds of roughly equal size
+kpart <- function(n, k) {
+    rep_len(1:k, length.out = n)
+}
+
+#' Find cross-validation predictions
+cv <- function(
+               formula, # Formula specifying which variables to use
+               data, # Dataset
+               model = lm, # Type of model to train (as a function)
+               n = nrow(data), # number of rows in the data matrix
+               k = min(n, 10), # number of cross-validation folds
+               split = kpart(n, k), # the split of n data items into k folds
+               ## function to train a model on data
+               train = function(data) model(formula, data = data),
+               ## function to make predictions on the trained model
+               pred = function(model, data) predict(model, newdata = data)) {
+    yhat <- NULL
+    for (i in 1:k) {
+        ## go through all folds, train on other folds, and make a prediction
+        mod <- train(data[split != i, ])
+        if (is.null(yhat)) {
+            ## initialise yhat to something of correct data type,
+            yhat <- pred(mod, data)
+        } else {
+            yhat[split == i] <- pred(mod, data[split == i, ])
+        }
+    }
+    yhat # finally, output cross-validation predictions
+}
+
+## Dummy model is here a model that ignores the covariates and always
+## predicts the mean of the training data. We use a linear regression
+## model with only intercept as a dummy model.
+dummy <- function(formula, data) {
+    target <- all.vars(formula[[2]])
+    lm(as.formula(sprintf("%s ~ 1", target)), data)
+}
+
+## Some regression models implemented in R. For documentation, just type
+## ?lm, ?rpart etc. Notice that you need the above-mentioned libraries to be
+## able to use these models.
+models <- list(
+    dummy = dummy,
+    OLS = lm,
+    RandomForest = randomForest,
+    SVM = svm,
+    RPART= rpart
+)
+
+a <- sapply(models, function(model) {
+    mod <- model(Next_Tmax ~ ., data = data_train)
+    c(
+        train = rmse(predict(mod, newdata = data_train), data_train$Next_Tmax),
+        test = rmse(predict(mod, newdata = data_test), data_test$Next_Tmax),
+        CV = rmse(cv(Next_Tmax ~ ., data_train, model), data_train$Next_Tmax),
+        LOOCV = rmse(cv(Next_Tmax ~ ., data_train, model,k=nrow(data_train)),
+                        data_train$Next_Tmax)
+    )
+})
+
+knitr::kable(t(a), "simple", digits = 3)
+```
+
+Make a table of numbers where the rows correspond to the different regression models, and the columns are as follows:
+
+* train the regression model on the training set and report the error on the training set (training loss)
+* train the regression model on the training set and report the error on the test set (testing loss)
+* loss for the 10-fold cross-validation 
+* leave-one-**station**-out cross-validation
+
+### Task b
+
+Which of the regressors is the best? How does the RMSE on the training data compare to the error on the test set? How does the cross-validation error correspond to the error on the test set? Could you do something with these regressors (on this training set) to make them perform better?
+
+#### Answer\
+The best regressors seems to be the RandomForest one, indeed he got the lowest error on both sets. The cross-validation error are really close to the error on the test set. 
+We could look at the impact of the variable on the predictive power of the model, to get an simpler model by reducing the number of variables and reduce the over fitting. We can also look at the correlation of the variables to remove the highly correlate ones.
+
+
+### Task c
+
+In Cho et al. (2020), the authors did not use normal cross-validation. Instead, they used "leave-one-station-out cross-validation". Explain what it is and why the authors opted to use it. Do it yourself and add it as one additional column for your table. Hint: If you use sklearn, you may find the parameter `groups` in `cross_val_score` helpful.
+
+#### Answer\
+The leave-one-out cross-validation method is a special case of cross-validation method, where the number of fold equal the number of data int the training set. Basically for n instances n-models are trained using n-1 data points. The performance of the n-models are calculated giving n-performances values from which the standard deviation can be calculated to measure the bias and the prediction power variability of the model.
+
+### Hints
+
+You can use the training/test set split below if you use R. We also give below pointers to suitable regression models that you may want to use.
+
+
+
+As a general rule, it is almost always a good idea to use ready-made libraries to do anything (e.g., you can easily code your function to split the data, but why not use the `train_test_split` provided by sklearn). We also give below pointers to suitable regression models.
+
+
+\newpage
+## Problem 3
+
+*[7 points]*
+
+*Objective: learning linear regression, concrete use of validation set, k-fold cross-validation*
+
+*Do this after lecture L3*
+
+In this problem we study linear regression on a synthetically generated dataset, with underlying function $f(x)=2-x+x^2$.  **You should collect the results of the tasks into a table,** where columns correspond to polynomial degrees in $\{1,2,3,4,8\}$ and rows to MSE on training, validation, and test set (task c), CV loss, and loss of a model trained on training+validation set on test set (task d).
+
+You can sample the data item (pair) $(x,y)$ as follows. $x$ is sampled uniformly from the interval $[-3,3]$ (R function `runif` or in Python `np.random.uniform`), and $\epsilon$ is sampled from a normal distribution with zero mean and standard deviation of $0.4$ (R function `rnorm` or Python `np.random.normal`). $y$ is then given by $y=f(x)+\epsilon$.
+
+### Task a
+
+First, create an R or Python function that takes $n$ as an input and outputs a dataset of size $n$. Use your function to create a *training set* of 10 data items, a *validation set* of 10 data items, and a *test set* of 1000 data items. In total, you should now, therefore, have a total of 1020 data items.
+
+```{r}
+set.seed(1)
+
+sample = function(n){
+  x = runif(n,-3,3)
+  e = rnorm(n,sd=0.4)
+  y = 2-x+x^2+e
+  return(data.frame(x,y))
+}
+
+train_set = sample(10)
+validation_set = sample(10)
+test_set = sample(1000)
+```
+
+
+### Task b
+
+Study the OLS linear regression with polynomials of degree $p$, where $p\in\{1,2,3,4,8\}$ (you can have more degrees if you want). More specifically, fit polynomials $\hat y=\sum\nolimits_{k=0}^p{w_kx^k}$ to the training set (of 10 data items) for different orders $p$ by using ordinary least squares (OLS) regression. For each value of $p$, produce a plot showing the points $(x_i,y_i)$ in the training set and the fitted polynomial in the interval $[-3,3]$. Make sure to plot the polynomials using (almost) all values of $x$ in $[-3,3]$, e.g., `seq(from=-3,to=3,length.out=256)` in R or `np.linspace(start=-3,stop=3,num=256)` in Python, and not only the values of $x$ appearing in your data! 
+
+\newpage 
+
+```{r,figures-sid, fig.show="hold", out.width="50%",echo=FALSE}
+set.seed(1)
+library(RColorBrewer)
+
+color = brewer.pal(n=8,'Set1')
+for (i in c(1,2,3,4,7,8)) {
+  print(ggplot(train_set,aes(x,y))+
+    geom_point()+
+    theme_bw()+
+    theme(panel.grid.minor = element_blank(),plot.title = element_text(hjust = 0.5),
+        legend.text=element_text(size=11),legend.text.align = 0)+
+    geom_smooth(method = 'lm', formula = y ~ poly(x,i),se=F,color=color[i])+
+    ggtitle(paste("Fitting of GLM model using polynomial equation degree",i)))
+}
+
+```
+
+
+\newpage
+### Tasks c and d
+
+Use the polynomials (values of $p$) you found above and compute and report the MSE of the polynomials on the training, validation, and test sets. These numbers will form the first three columns of your table.
+
+Combine the validation and training set and compute and report the MSE using 5-fold cross-validation. Then train your model on a combined training and validation set and report the error on the test set. These two numbers will form the last two columns of your table.
+
+```{r,echo=F}
+set.seed(1)
+combined_set = rbind(validation_set,train_set)
+#' mean squared error measure
+mse <- function(yhat, y) mean((y - yhat)**2)
+
+#' split n items into k folds of roughly equal size
+kpart <- function(n, k) {
+    rep_len(1:k, length.out = n)
+}
+
+#' Find cross-validation predictions
+cv <- function(
+               formula, # Formula specifying which variables to use
+               data, # Dataset
+               model = lm, # Type of model to train (as a function)
+               n = nrow(data), # number of rows in the data matrix
+               k = min(n, 10), # number of cross-validation folds
+               split = kpart(n, k), # the split of n data items into k folds
+               ## function to train a model on data
+               train = function(data) model(formula, data = data),
+               ## function to make predictions on the trained model
+               pred = function(model, data) predict(model, newdata = data)) {
+    yhat <- NULL
+    for (i in 1:k) {
+        ## go through all folds, train on other folds, and make a prediction
+        mod <- train(data[split != i, ])
+        if (is.null(yhat)) {
+            ## initialise yhat to something of correct data type,
+            yhat <- pred(mod, data)
+        } else {
+            yhat[split == i] <- pred(mod, data[split == i, ])
+        }
+    }
+    yhat # finally, output cross-validation predictions
+}
+
+
+
+## Some regression models implemented in R. For documentation, just type
+## ?lm, ?rpart etc. Notice that you need the above-mentioned libraries to be
+## able to use these models.
+powers <- list(
+    P_1 = 1,
+    P_2 = 2,
+    P_3 = 3,
+    P_4 = 4,
+    P_7 = 7,
+    P_8 = 8
+)
+
+a3 <- sapply(powers, function(p) {
+    mod <- lm(y ~ poly(x,p), data = train_set)
+    c(
+        Train = mse(predict(mod, newdata = train_set), train_set$y),
+        Test = mse(predict(mod, newdata = test_set), test_set$y),
+        Validation = mse(predict(mod, newdata = validation_set), validation_set$y),
+        Combined = mse(predict(mod, newdata = combined_set), combined_set$y),
+        CV_combined = mse(cv(y ~ poly(x,p), combined_set, lm,k=5), combined_set$y),
+        CV_test =  mse(cv(y ~ poly(x,p), combined_set, lm, k=5,
+                          pred = function(lm, test_set) predict(lm, newdata = test_set)),
+                       test_set$y) 
+    )
+})
+
+knitr::kable(t(a3), "simple", digits = 3)
+
+```
+
+### Task e
+
+
+Explain how you would choose the polynomial order if given a combined training and validation set and the table you constructed above (i.e., the losses on the test set would be unknown).
+
+#### Answer\
+
+Given only the Combined data set that is quite small, I would based my choice on the difference of the MSE error value between the 5 fold cross-validation method and the basic model using all the data. The polynomial order 2 have MSE value of 0.179 and the 5 fold cross-validation method give a slightly higher MSE value of 0.232 this increase isn't big enough to translate an over fitting so I would pick this one.
+
+### Hints
+
+You should take a look at the code example in the previous problem.
+
+\newpage
+## Problem 4
+
+*[7 points]*
+
+*Learning objectives: bias and variance and model flexibility*
+
+*Do this after lecture L4*
+
+Read Section 2.2 of James et al.
+
+Consider the bias-variance decomposition in the context of model selection.
+
+### Task a
+
+Provide a sketch of typical (squared) bias, variance, training error, test error, and Bayes (or irreducible) error curves on a single plot as we go from less flexible statistical learning methods towards more flexible approaches. There should be five curves. Make sure to label each one. The x-axis should represent the amount of flexibility in the method, and the y-axis should represent the values for each curve.
+
+```{r,echo=F}
+x = seq(0,10,0.2)
+squared_bias = function(x){
+  .002*(-x+10)**3
+}
+
+variance = function(x){
+    .002*x**3
+}
+
+training_error= function(x){
+   2.38936 - 0.825077*x + 0.176655*x**2 - 0.0182319*x**3 + 0.00067091*x**4
+}
+
+test_error= function (x){
+     3 - 0.6*x + .06*x**2
+}
+
+bayes_error=function(x){
+  x + 1 - x
+}
+
+df.sketch = data.frame("Model flexibility"=x,
+                       "Squared bias"=squared_bias(x),
+                       "Variance"=variance(x),
+                       "Training error"=training_error(x),
+                       "Test error"=test_error(x),
+                       "Bayes error"=bayes_error(x))
+
+
+ggplot(df.sketch,aes(Model.flexibility))+
+  geom_line(aes(y = Squared.bias,colour="Squared bias"))+
+  geom_line(aes(y = Variance,colour="Variance"))+
+  geom_line(aes(y = Training.error,colour="Training error"))+
+  geom_line(aes(y = Test.error,colour="Test error"))+
+  geom_line(aes(y = Bayes.error,colour="Bayes error"))+
+  scale_color_brewer(palette = 'Set1')+
+  labs(colour="")+
+  xlab("Flexibility")+
+  ylab("Value")+
+  theme_bw()+
+  ggtitle("Sketch of typical errors mettrics")+
+  theme(panel.grid.minor = element_blank(),plot.title = element_text(hjust = 0.5),
+        legend.text=element_text(size=11),legend.text.align = 0, legend.position = c(0.5,0.78))
+
+```
+
+Explain why each of the five curves has the shape displayed.
+
+The bayes error is constant since by definition it does not depend on X and neither on the flexibility of the model.
+
+The squared bias is the error in the model introduced by the difference of approximation and the true underlying function. Increasing the flexibility of the model will reduce the difference in the approximation and the true.
+
+The test error is given by the formula: Variance + Bias + Bayes error, all of which are non-negative. The Bayes error is constant and a lower bound for the test error. The curve look like an upward parabola: high for unflexible models, decreasing as flexibility increases until it reaches a minimum. Then the variance starts to dominate and the test error starts increasing. 
+
+The training error is given by the average difference between the predictions of the model and the observations. If a model if very unflexible the difference is high, but as the flexibility increases this difference will decrease. 
+
+The variance of a model with no flexibility the variance will be zero, since the model fit will be independent of the data. As the flexibility increases the variance will increase as well since the noise in a particular training set will correspondingly captured by the model.
+
+
+### Task b
+
+Here you will test the bias-variance tradeoff in practice with the polynomial data generation process described in the previous problem at $x=0$. 
+
+According to Eq. (2.7) of James et al., you can decompose the expected squared loss at $x=0$ can as a sum of irreducible error, the bias term, and the variance term as ${\rm{loss}}={\rm{bayes}}+{\rm{bias}}^2+{\rm{var}}$, or: 
+
+$$
+    E_D[(y_0-\hat f(0))^2] = E_D[(y_0-f(0))^2] + (E_D[\hat f(0)]-f(0))^2 + E_D[(\hat f(0)-E_D[\hat f(0)])^2],
+$$
+where the expectation $E_D$ is over the 1000 data sets described below.
+
+Do the following: 
+
+- (i) Compute and plot (or make a table of) these four terms (squared loss, irreducible error, bias term, variance term) at $x=0$ as a function of polynomial degrees at least in $p\in\{1,2,3,4,8\}$ by using the 1000 data sets described below, which should result in 4 curves. 
+```{r, fig.show="hold", out.width="50%",echo=FALSE}
+set.seed(1)
+
+sample = function(n){
+  x = runif(n,-3,3)
+  e = rnorm(n,sd=0.4)
+  y = 2-x+x^2+e
+  return(data.frame(x,y))
+}
+
+
+df.loss =  data.frame()
+df.bayes =  data.frame()
+df.bia =  data.frame()
+df.var =  data.frame()
+
+test.point = data.frame(x=c(0))
+for (j in seq(8)) {
+  df.end = data.frame()
+  train_set = sample(10)
+
+  for (i in seq(1000)){
+    df.4.1 = sample(10)
+    lm.tmp = lm(y~poly(x,j),df.4.1)
+    f_0_hat =  as.numeric(predict(lm.tmp,test.point))
+    e_0 = rnorm(1,mean = 0, sd=0.4)
+    y_0 = 2+e_0
+    df.end = rbind(df.end, c("f_0"=2,"f_0_hat"=f_0_hat,"y_0"=y_0))
+    colnames(df.end) =  c("f_0","f_0_hat","y_0")
+  }
+    m.f_0_hat = mean(df.end$f_0_hat)
+    m.y0 = mean(df.end$y_0)
+    df.loss =  rbind(df.loss,
+                     c(mean((df.end$y_0-df.end$f_0_hat)^2),
+                       j))
+    df.bayes = rbind(df.bayes,
+                     c(mean((df.end$y_0-2)^2),j))
+    df.bia = rbind(df.bia,
+                   c((mean(df.end$f_0_hat)-2)^2,
+                     j))
+    df.var = rbind(df.var,
+                   c(mean((df.end$f_0_hat-mean(df.end$f_0_hat))^2), 
+                     j))
+}
+colnames(df.var) = c("Variance","Flexibility")
+colnames(df.bia) = c("Bias","Flexibility")
+colnames(df.loss) = c("Loss","Flexibility")
+colnames(df.bayes) = c("Bayes","Flexibility")
+
+color = brewer.pal(n=9,'Set1') 
+ggplot(df.var,aes(Flexibility,Variance))+
+  geom_point(color=color[5])+
+  ylab("Polynomial degree")+
+  theme_bw()+
+  theme(panel.grid.minor = element_blank(),plot.title = element_text(hjust = 0.5),
+        legend.text=element_text(size=11),legend.text.align = 0)+
+  ggtitle("Variance in function of the polynomial degree")
+
+ggplot(df.bia,aes(Flexibility,Bias))+
+  geom_point(color=color[2])+
+  ylab("Polynomial degree")+
+  theme_bw()+
+  ggtitle("Squared loss error in function of the polynomial degree")+
+  theme(panel.grid.minor = element_blank(),plot.title = element_text(hjust = 0.5),
+        legend.text=element_text(size=11),legend.text.align = 0)+
+  ggtitle("Bias in function of the polynomial degree")
+
+
+ggplot(df.loss,aes(Flexibility,Loss))+
+  geom_point(color=color[9])+
+  ylab("Polynomial degree")+
+  theme_bw()+
+  ggtitle("Squared loss error in function of the polynomial degree")+
+  theme(panel.grid.minor = element_blank(),plot.title = element_text(hjust = 0.5),
+        legend.text=element_text(size=11),legend.text.align = 0)
+
+
+ggplot(df.bayes,aes(Flexibility,Bayes))+
+  geom_point(color=color[1])+
+  ylab("Polynomial degree")+
+  theme_bw()+
+  ggtitle("Bayes in function of the polynomial degree")+
+  theme(panel.grid.minor = element_blank(),plot.title = element_text(hjust = 0.5),
+        legend.text=element_text(size=11),legend.text.align = 0)
+
+
+
+
+
+```
+
+- (ii) Check that the sum of the terms equals squared loss for different polynomial degrees, i.e., verify Eq. (2.7) of James et al. 
+```{r,echo=FALSE}
+df.diff = data.frame()
+for (i in seq(8)) {
+df.diff= rbind(df.diff,
+               c(i,
+                 df.loss$Loss[i],
+                 df.var$Variance[i]+df.bayes$Bayes[i]+df.bia$Bias[i],
+                 df.loss$Loss[i]-(df.var$Variance[i]+df.bayes$Bayes[i]+df.bia$Bias[i])))
+}
+colnames(df.diff)=c("Polynomial degree","Loss","Sum","Difference")
+knitr::kable(df.diff, "simple", digits = 3)
+```
+
+
+- (iii) Do the terms behave as you would expect from the discussion in Task a?
+
+#### Answer\
+
+The Bayes and Variance variable behave like expected from the discussion in task a, but the Bias have an opposite behavior than the one expected. This can be explain by the fact that in this model we looked only at the specific point x=0 this particular point isn't in every training dataset that we generated to train our 1000 models, so the point x=0 can be seen as a test point from a test set. This behavior illustrate that by increasing the polynomiale power we are increasing the over fitting on the training data
+
+### How to generate the datasets 
+
+Generate 1000 new training sets of 10 data items and train a polynomial regressor $\hat f(x)$ for each of them in $\{1,2,3,4,8\}$ on each training set. Each of the 1000 training sets generates a test data point at $x=0$, i.e.,  $(0,y_0)$, where $y_0=f(0)+\epsilon$ and $\epsilon$ is a random variable with zero mean and variance of $\sigma^2=0.4^2$. 
+After this exercise, you should therefore be able to (i) sample a new dataset of size 10, (ii) train a polynomial regressor of a given degree on this data set, and (iii) output the following numbers: $f(0)$ (this constant!), $\hat f(0)$, and $y$. You can construct a table with 1000 rows and three columns for these numbers. If you build this table, you can easily estimate the required expectations. 
+
+\newpage
+## Problem 5
+
+*[6 points]*
+
+*Topic: theoretical properties of generalization loss and OLS linear regression [Ch. 2-3]*
+
+*Do this after lecture L4*
+
+Consider a linear regression model $\hat f({\bf x})=\hat\beta^T{\bf x}$, where $\hat\beta\in{\mathbb{R}}^p$ is fit by ordinary least squares (OLS) to a set of training data $({\bf x}_1,y_1),\ldots,({\bf x}_n,y_n)$ drawn at random from a population, where  ${\bf x}_i\in{\mathbb{R}}^p$ and $y_i\in{\mathbb{R}}$ for $i\in\{1,\ldots,n\}$. Suppose we have a test data $(\overline {\bf x}_1,\overline y_1),\ldots,(\overline {\bf x}_m,\overline y_m)$ drawn from the same population. Denote $$L_{train}=\frac 1n\sum\nolimits_{i=1}^n{\left(y_i-\hat\beta^T{\bf x}_i\right)^2}$$ and $$L_{test}=\frac 1m\sum\nolimits_{i=1}^m{\left(\overline y_i-\hat\beta^T\overline {\bf x}_i\right)^2}.$$
+
+### Task a
+
+Prove that $$E\left[L_{test}\right]=E\left[\left(\overline y_1-\hat\beta^T\overline {\bf x}_1\right)^2\right].$$
+
+### Task b
+
+Prove that $L_{test}$ is an unbiased estimate of the generalization error for the OLS regression.
+
+### Task c
+
+Prove that $E\left[L_{train}\right]\le E\left[L_{test}\right]$.
+
+### Task d
+
+Explain how the task result above is related to the generalization problem in machine learning.
+
+### About expectations  
+
+There are (at least) two ways to define the expectations $E\left[L_{train}\right]$ and $E\left[L_{test}\right]$: 
+
+1. sampling the testing data while keeping the training data fixed, in which case $\hat\beta$ is constant, resulting in $E\left[L_{test}\right]$ being the expected generalization error for this particular training data and regression solution. 
+2. sampling both the training and testing data, in which $\hat\beta$ is a random variable and a function of the training data, resulting in $E\left[L_{test}\right]$ being the expected generalization error averaged over all possible training data sets. 
+
+It is sometimes tricky to keep track which is a random variable and over what to take expectations, and often it is not explicitly mentioned. Both of the definitions above make sense, but have slightly different interpretations. 
+Please use the second definition in this task. You can read, e.g., Bengio et al. (2004)\footnote{Bengio, Y., Grandvalet, Y., 2004. No unbiased estimator of the variance of K-fold cross-validation. J. Mach. Learn. Res. 5, 1089-1105. \url{https://www.jmlr.org/papers/v5/grandvalet04a.html}} for a more in-depth discussion of the expectations if interested, where "EP" of Eq. (1) corresponds to the first and "EPE" of Eq. (2) corresponds to the second definition.
+
+\newpage
+
+
+
+## Problem 6
+ 
+*[6 points]*
+
+*Objective: properties of estimators [Ch 3]*
+
+*Do this after lecture L4*
+
+So far, we have tried only to estimate the loss (to choose the best model). It is also essential to estimate model parameters and give them confidence bounds. In this task, we use the CO2 flux dataset. In this problem, we study 1-variable linear regression where we try to estimate CO2 flux (y=`FCO2`) given by using the net radiation (x=`HYY_META.Net`, or `Net` in short), with the intercept term or $\hat y=w_0+w_1x$. To make things a bit more statistically interesting, we use only 50 randomly sampled rows from the dataset, available in the file `co2lite.csv`.
+
+### Task a
+
+The simplest form of OLS linear regression is to do it with a degree-0 polynomial, in which case you have only the intercept term. The problem reduces to estimating the intercept term or estimating the mean of numbers!
+
+Let's estimate the mean of `FCO2` in your dataset of 50 points. What are the t-statistics (James et al., Sect. 3.1.2) and the corresponding 95\% confidence intervals for the mean? After observing the 50 data points, can you conclude that the true mean of the `FCO2` is non-zero?
+
+```{r,echo=FALSE}
+df.6= read.csv("co2lite.csv")
+model.lm = lm(FCO2 ~ 1, data = df.6)
+sum.mod = summary(model.lm)
+
+sum.mod$coefficients
+
+print(confint(model.lm))
+
+```
+Because 0 is not contained within the 95% confidence interval and the P values <0.02 we can validate the hypothesis that the true mean value of the date is non-zero.
+
+
+### Task b
+
+
+Let's move to OLS linear regression. Estimate the confidence bounds for intercept, slope terms, and t-values, as in Section 3.6.2 of the textbook.
+
+```{r,echo=FALSE}
+model.lm2 = lm(FCO2 ~  poly(Net,1), data = df.6)
+
+summary(model.lm2)
+```
+
+**Hint:** R has an excellent `summary` function. In Python, you may want to use `statsmodels.regression.linear_model.OLS` instead of the sklearn. Statsmodel gives a nice summary of the statistics, like R. The fitted object has a nice `summary()` method.
+
+### Task c
+
+Study the degree-1 polynomial that you fitted to the data in Task b above. You may find that the slope is negative with high confidence. Can you, therefore, safely conclude that when `Net` decreases, "FCO2` tends to increase and vice versa? Read the Sect. 3.3.3 of James et al. lists six potential problems with linear regression models. Which of the six problems would (potentially) apply here? *Optionally,* explain and demonstrate the tricks and plots you could use to detect and diagnose the problem(s) (out of the six listed) that apply to this data.
+
+```{r, fig.show="hold", out.width="50%",echo=FALSE}
+model.lm2 = lm(FCO2 ~  poly(Net,1), data = df.6)
+
+ggplot(df.6,aes(x=Net,y=FCO2))+
+    geom_point()+
+    theme_bw()+
+    theme(panel.grid.minor = element_blank(),plot.title = element_text(hjust = 0.5),
+        legend.text=element_text(size=11),legend.text.align = 0)+
+    geom_smooth(method = 'lm', formula = y ~ x,se=F)+
+    ggtitle(paste("Fitting of GLM model using polynomial equation degree",1))
+
+plot(model.lm2)
+```
+
+The six potential problems with linear models are: 
+
+  1- Non-linearity of the response-predictor relationships.
+  
+  2- Correlation of error terms.
+  
+  3- Non-constant variance of error terms.
+  
+  4- Outliers.
+  
+  5- High-leverage points.
+  
+  6- Collinearity.
+
+
+In our case we can identify some outliers (like the point 49 in the Leverage VS Standardized Residuals plot)
+
+**Hint:** You get useful diagnostic plots by plotting the `lm` object in R. For more information, type `?plot.lm` in the R command prompt. In Python, obtaining nice diagnostic plots requires more effort.
+
+\newpage
+## Problem 7
+
+*[2 points]*
+
+
+
+*Objectives: self-reflection, giving feedback on the course*
+
+Write a learning diary of the topics of lectures 1-4 and this exercise set.
+
+The lectures 1-4 refreshed some point that I have seen in bio-statistic and I use in my project as a phd student like the data wrangling challenge, I faced some situation where Chemists need or give a specific format of the data based on the software they are using. I also give a lot of attention to the data cleaning/ preparation face.
+The lecture also helped me to get a better understanding of some concept like the concept of Boostrap or cross validation that I kinda forgot since I am not using it on daily basis.
+
+With my bio-informatic background I was familiar with R and the general statistic knowledge (supervised  and unsupervised learning) but I have to say that the mathematical demonstration are a bit confusing. Most likely because it's out of my field since a long time, but I had to spend a lot of time on this part, and I am still confused. 
+
+I am looking forward for the Models part of the course, I tried to use some deep learning model for my main project (kNN mostly) without success. 
+
+**Guiding questions:** What did I learn? What did I not understand? Was there something relevant for other studies or (future) work? The length of your reply should be 1-3 paragraphs of text. You can also give feedback on the course.
+
+<!--
+
+## Problem 5 (commented out)
+
+*[6 points]*
+
+In this problem, you will study the no-free lunch (NFL) theorems. NFL theorems are an extensive topic, and here we will only scratch the surface and discuss one particular case related to binary classification. For more information, you can read (but don't have to read) the following classic paper:
+
+* Wolpert (1996) The lack of a priori distinctions between learning algorithms. Neural Comput. 8(7): 1341–1390. <https://doi.org/10.1162/neco.1996.8.7.1341>
+
+This problem aims to understand and apply "mathematical" machine learning knowledge and secondarily to give insight into NFL theorems (briefly mentioned in Sect. 2.2 of James et al.). We will first have a discussion, after which there are some tasks to do. Tasks b and c are a bit technical and require some mathematical derivation; nothing impossible, but not entirely straightforward either. Notice that b and c contribute only to a small number of points in this exercise set, so it is probably not a disaster if you skip them.
+
+Here we consider a binary classification setting, where the training data $D=({\bf x},{\bf y})$ of size $N$ is given by a sequence ${\bf x}=(x_1,\ldots,x_N)$, where the input set is finite and of size $K$ or $x_i\in{\cal X}=\{1,\ldots,K\}$. The respective binary target variables ${\bf y}=(y_1,\ldots,y_N)$ are given $y_i=f(x_i)\in{\cal Y}=\{-1,1\}$, where the *data-generating function* $f:{\cal X}\to{\cal Y}$ is a fixed but unknown function. 
+
+Notice that we have a noise-free case for simplicity: to add noise, we could add a noise term to $f$. Adding the noise would make the proofs more complex, but the essential idea remains the same.
+
+*Nota bene 1:* in "practical" machine learning problems discussed in the course, the input space ${\cal X}$ is often a $p$-dimensional real vector denoted by ${\mathbb{R}}^p$. However, when presented with a finite number of bits, the real vector is represented internally by the computer with a bounded integer. For example, a single-precision floating point number takes 32 bits, which means that, e.g., you can represent a 5-dimensional floating point by $5\times 32=160$ bits or an integer in $\{1,2,\ldots,2^{160}\}$. In other words, you can often think that everything is finite and discrete in computer science. 
+
+
+We define a *hypothesis* to be a "classifier function" $h:{\cal X}\to{\cal Y}$ that takes in $x\in{\cal X}$ and tries to predict $y\in{\cal Y}$. We use ${\cal H}$ to denote a *hypothesis class* or a set of allowed classifier functions.
+
+A *learning algorithm* ${\cal A}$ is a procedure (here a deterministic function) that takes in the training data $D$ and outputs a hypothesis from the hypothesis class ${\cal H}$, or ${\cal A}:{\cal X}^N\times{\cal Y}^N\to{\cal H}$. Learning algorithms can, in general, be stochastic procedures. Still, in this problem, we restrict the discussion to deterministic algorithms. ${\cal A}$ is simply a deterministic function that always outputs the same hypothesis for a given training data set.
+
+*Note bene 2:* Often, stochastic procedures are deterministic functions in computer science. We often use pseudo-random number generators to simulate randomness. Pseudo-number generators are procedures that, given a seed value (an integer), output numbers that appear to be random but generate the "random numbers"  with a deterministic procedure. Therefore, just as with real numbers, with Turing machines (=classical computers), you can often think that there is no randomness.
+
+The final ingredient we need is a *loss function* $l:{\cal Y}\times{\cal Y}\to{\mathbb{R}}$ which we take to be here 0-1 loss which satisfies $l(y,h)=I(y\ne h)$ where $I(z)$ is the indicator function which equals $1$ if $z$ is true and $0$ otherwise.
+
+
+In this problem, you are given a fixed training data vector ${\bf x}$ and a single test data point $q\in{\cal X}$ from outside the training data, i.e., there is no $i\in\{1,\ldots,N\}$ such that $x_i=q$. With ${\bf x}$ and $q$ fixed, we study the expected out-set loss (testing loss) for $q$ $L_{out}=E[l(f(q),h(q))]$. The expectation $E$ is defined differently depending on the NFL theorem: in task b, we keep the learning algorithm fixed and average over the data-generating functions, and in task c, we keep the data-generating function fixed and average over the learning algorithms.
+
+
+### Task a
+
+Write down the expression for the cardinality (=the number) of different possible hypothesis $h$ (i.e., what is the number of possible hypothesis functions), data generating functions $f$, data sets $D$, and learning algorithms ${\cal A}$ when you are given $K$ and $N$. Report these counts for $K=3$ and $N=5$. How could you store these functions $h$ and $f$ and the data set $D$ into your computer, assuming your computer had sufficiently large memory (hint: maybe some sort of array would be helpful here)? Since we are dealing here with finite sets, everything is nicely finite.
+
+Hint: There are $|B|^{|A|}$ distinct functions from $A$ to $B$, if $A$ and $B$ are finite sets.
+
+
+### Task b
+
+For a fixed learning algorithm ${\cal A}$, prove that $E[L_{out}]=1/2$ where the expectation is averaged over all possible data-generating functions $f$ that are consistent with the training data, i.e., all data generating functions that satisfy $f(x_i)=y_i$ for all $i\in\{1,\ldots,N\}$. Call this result your first NFL theorem.
+
+Can you argue that this theorem implies that if your learning algorithm performs better than random guessing, then there are an equal number of data-generating functions for which the same learning algorithm performs worse than random guessing? 
+
+Hint: "Random guessing" or flipping a coin would give you a 0-1 loss of $1/2$!
+
+### Task c
+
+For a fixed data-generating function $f$, prove that $E[L_{out}]=1/2$ where the expectation is averaged over all possible learning algorithms ${\cal A}$. Call this result your second NFL theorem.
+
+Can you argue that this theorem implies that if a set of learning algorithms performs better than random guessing, then there is an equal number of learning algorithms that perform worse than random for the same data-generating function?
+
+### Task d
+
+The theorems above (tasks b & c) seem to imply that on average any learning algorithm can perform no better than random guessing. Therefore, it would seem that learning (finding a hypothesis that performs better than random guessing) is impossible! Explain how learning (e.g., a classifier) is, however, possible in practice. What is needed to make the learning possible? Explain this requirement both in terms of the notation above (i.e., what should be restricted to make the learning possible) and how you would consider this when learning a classifier in practice (give an example!).
+
+
+### Task f
+
+The above examples were in the context of a binary classifier. Consider a regression problem where the objective is to estimate a real number given a real number. You don't have to do any proofs or derivations here, but similar results apply for regression also. Explain what the NFL theorems 1 (task b) and 2 (task c) would mean for the regression. How can you "circumvent" the NFL theorem (i.e., make learning possible) and make regression work better than random guessing? Give one example.
+
+\newpage
+
+-->
