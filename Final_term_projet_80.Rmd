@@ -1,0 +1,9 @@
+---
+title: "Term project description"
+author: "Group 80"
+date: "2 November 2022"
+output: 
+  pdf_document: default
+  html_document: default
+urlcolor: blue
+---
