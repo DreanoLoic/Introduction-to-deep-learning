@@ -9,6 +9,8 @@ urlcolor: blue
 ---
 *DATA11002 Introduction to Machine Learning (Autumn 2022)*
 
+Adding this line!
+
 In this term project, you will train a classifier on a data set of atmospheric measurements. To complete the project, you should deliver:
 
 - **Sun 11 December:** [Predictions](https://moodle.helsinki.fi/mod/assign/view.php?id=2941906) for the test set and your estimate of accuracy (`answers.csv`, see below), and a preliminary version of your project report as a [single pdf file](https://moodle.helsinki.fi/mod/assign/view.php?id=2941903).
